@@ -1,64 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import { useRecoilState } from 'recoil';
-import { targetState } from '../../states';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { targetsState, boxState } from '../../states';
 
 function SourceArea(props) {
-  const [target, setTarget] = useRecoilState(targetState);
-  const dragableItems = useRef([]);
-
-  //   useEffect(() => {
-  //     let posX = 0;
-  //     let posY = 0;
-  //     let copySource = '';
-
-  //     dragableItems.current.forEach(item => {
-  //       item.ondragstart = e => {
-  //         e.dataTransfer.setData('word', e.target.innerText);
-
-  //         // posX = e.clientX;
-  //         // posY = e.clientY;
-
-  //         e.dataTransfer.dropEffect = 'copy';
-  //         e.dataTransfer.effectAllowed = 'copy';
-
-  //         // document.body.appendChild(copySource);
-  //       };
-
-  //       item.ondrag = e => {
-  //         e.preventDefault();
-  //         e.dataTransfer.dropEffect = 'copy';
-  //         e.dataTransfer.effectAllowed = 'copy';
-
-  //         // e.target.style.left = `${e.target.offsetLeft + e.clientX - posX}px`;
-  //         // e.target.style.top = `${e.target.offsetTop + e.clientY - posY}px`;
-  //         // posY = e.clientY;
-  //         // posX = e.clientX;
-  //       };
-
-  //       item.ondragenter = e => {
-  //         e.dataTransfer.dropEffect = 'copy';
-  //       };
-
-  //       item.ondragend = e => {
-  //         e.preventDefault();
-
-  //         if (e.clientX > 420) {
-  //           setTarget(target => {
-  //             return target.concat({
-  //               text: e.target.innerText,
-  //               top: e.clientY,
-  //               left: e.clientX,
-  //             });
-  //           });
-  //           console.log(target);
-  //         }
-
-  //         // e.target.style.left = `${e.target.offsetLeft + e.clientX - posX}px`;
-  //         // e.target.style.top = `${e.target.offsetTop + e.clientY - posY}px`;
-  //       };
-  //     });
-  //   }, []);
+  const [targets, setTargets] = useRecoilState(targetsState);
+  const box = useRecoilValue(boxState);
 
   let posX = 0;
   let posY = 0;
@@ -66,10 +13,16 @@ function SourceArea(props) {
   let originalX = 0;
   let originalY = 0;
 
+  // let tempDetails = '';
+
   const dragStartHandler = e => {
-    e.dataTransfer.setData('word', e.target.innerText);
-    e.dataTransfer.dropEffect = 'copy';
-    e.dataTransfer.effectAllowed = 'copy';
+    // e.dataTransfer.setData('data', JSON.stringify(STOCK_DATA[e.target.id]));
+
+    // e.dataTransfer.dropEffect = 'copy';
+    // e.dataTransfer.effectAllowed = 'copy';
+
+    const img = new Image();
+    e.dataTransfer.setDragImage(img, 0, 0);
 
     posX = e.clientX;
     posY = e.clientY;
@@ -79,74 +32,129 @@ function SourceArea(props) {
   };
 
   const dragHandler = e => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-    e.dataTransfer.effectAllowed = 'copy';
+    // e.preventDefault();
+    // e.dataTransfer.dropEffect = 'copy';
+    // e.dataTransfer.effectAllowed = 'copy';
 
-    // e.target.style.left = `${e.target.offsetLeft + e.clientX - posX}px`;
-    // e.target.style.top = `${e.target.offsetTop + e.clientY - posY}px`;
-    // posY = e.clientY;
-    // posX = e.clientX;
+    e.target.style.left = `${e.target.offsetLeft + e.clientX - posX}px`;
+    e.target.style.top = `${e.target.offsetTop + e.clientY - posY}px`;
+
+    posY = e.clientY;
+    posX = e.clientX;
   };
 
   const dragEndHandler = e => {
-    e.preventDefault();
-    console.log(e);
+    // e.preventDefault();
+    // e.dataTransfer.dropEffect = 'copy';
+    // console.log('dragend');
 
-    if (e.clientX > 420) {
-      setTarget(target => {
-        return target.concat({
-          text: e.target.innerText,
-          top: e.clientY,
-          left: e.clientX,
+    if (
+      box.left < e.clientX &&
+      e.clientX < box.right &&
+      box.top < e.clientY &&
+      e.clientY < box.bottom
+    ) {
+      setTargets(targets => {
+        const newTargets = [...targets];
+        newTargets.push({
+          id: parseInt(e.timeStamp),
+          top: e.target.offsetTop + e.clientY - posY,
+          left: e.target.offsetLeft + e.clientX - posX,
+          details: STOCK_DATA[e.target.id],
+          // details: tempDetails,
         });
+        return newTargets;
       });
     }
 
     e.target.style.left = `${originalX}px`;
-    e.target.style.top = `${originalY - 5}px`;
+    e.target.style.top = `${originalY}px`;
   };
 
+  // const dragOverHandler = e => {
+  //   e.preventDefault();
+  // };
+
+  // const dropHandler = e => {
+  //   tempDetails = JSON.parse(e.dataTransfer.getData('data'));
+  // };
+
   return (
+    // <Container onDragOver={dragOverHandler} onDrop={dropHandler}>
     <Container>
-      <Label draggable={false}>GOODS 🎁</Label>
-      <WordContainer>
-        {DATA.map((data, index) => (
-          <Word
+      <Label draggable={false}>STOCKS 📈</Label>
+      <StockContainer>
+        {STOCK_DATA.map((data, index) => (
+          <Stock
             key={index}
-            ref={el => (dragableItems.current[index] = el)}
+            id={index}
             onDragStart={dragStartHandler}
             onDrag={dragHandler}
             onDragEnd={dragEndHandler}
             top={index * 70}
             draggable
           >
-            {data}
-          </Word>
+            {data.name}
+          </Stock>
         ))}
-      </WordContainer>
+      </StockContainer>
     </Container>
   );
 }
 
-const DATA = [
-  'Milk 🥛',
-  'Cupcake 🧁',
-  'Pizza 🍕',
-  'Book 📗',
-  'Apple 🍎',
-  'Lemon 🍋',
+const STOCK_DATA = [
+  {
+    name: '대한항공 🛫',
+    price: 31800,
+    volume: 4236455,
+    marketCap: 11.607,
+  },
+  {
+    name: '셀트리온 💊',
+    price: 281500,
+    volume: 811596,
+    marketCap: 38.8235,
+  },
+  {
+    name: '현대차 🚗',
+    price: 241000,
+    volume: 1272487,
+    marketCap: 51.494,
+  },
+  {
+    name: '카카오 🍋',
+    price: 159000,
+    volume: 4585854,
+    marketCap: 70.5848,
+  },
+  {
+    name: '하이브 🕺',
+    price: 324500,
+    volume: 543674,
+    marketCap: 12.2828,
+  },
+  {
+    name: '네이버 🍀',
+    price: 391000,
+    volume: 698598,
+    marketCap: 64.227,
+  },
+  {
+    name: '삼성전자 🌊',
+    price: 80000,
+    volume: 11284877,
+    marketCap: 477.5826,
+  },
 ];
 
 const Container = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
+  flex-shrink: 0;
   width: 300px;
-  height: 800px;
-  margin: 10px 0 10px 80px;
+  height: 80vh;
+  margin: 10px 0;
   border-radius: 10px;
   box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.15);
+  z-index: 10;
 `;
 
 const Label = styled.div`
@@ -157,21 +165,26 @@ const Label = styled.div`
   font-weight: bold;
 `;
 
-const WordContainer = styled.div`
+const StockContainer = styled.div`
   ${({ theme }) => theme.flexColumnSet()};
 `;
 
-const Word = styled.div`
-  position: fixed;
-  top: ${props => `${props.top + 100}px`};
+const Stock = styled.div`
+  position: absolute;
+  top: ${props => `${props.top + 150}px`};
   width: 260px;
-  margin: 5px 0;
-  padding: 20px;
+  padding: 20px 0;
   background-color: white;
   border-radius: 10px;
-  text-align: center;
   box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.25);
-  /* cursor: pointer; */
+  text-align: center;
+  z-index: 10;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #e4ede6;
+    z-index: 50;
+  }
 `;
 
 export default SourceArea;

@@ -1,11 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { targetsState, boxState } from '../../states';
+import { targetsState, boxState, ratioState, screenState } from '../../states';
 
 function SourceArea(props) {
   const [targets, setTargets] = useRecoilState(targetsState);
   const box = useRecoilValue(boxState);
+  const ratio = useRecoilValue(ratioState);
+  const screen = useRecoilValue(screenState);
 
   let posX = 0;
   let posY = 0;
@@ -13,14 +15,7 @@ function SourceArea(props) {
   let originalX = 0;
   let originalY = 0;
 
-  // let tempDetails = '';
-
   const dragStartHandler = e => {
-    // e.dataTransfer.setData('data', JSON.stringify(STOCK_DATA[e.target.id]));
-
-    // e.dataTransfer.dropEffect = 'copy';
-    // e.dataTransfer.effectAllowed = 'copy';
-
     const img = new Image();
     e.dataTransfer.setDragImage(img, 0, 0);
 
@@ -32,10 +27,6 @@ function SourceArea(props) {
   };
 
   const dragHandler = e => {
-    // e.preventDefault();
-    // e.dataTransfer.dropEffect = 'copy';
-    // e.dataTransfer.effectAllowed = 'copy';
-
     e.target.style.left = `${e.target.offsetLeft + e.clientX - posX}px`;
     e.target.style.top = `${e.target.offsetTop + e.clientY - posY}px`;
 
@@ -44,10 +35,6 @@ function SourceArea(props) {
   };
 
   const dragEndHandler = e => {
-    // e.preventDefault();
-    // e.dataTransfer.dropEffect = 'copy';
-    // console.log('dragend');
-
     if (
       box.left < e.clientX &&
       e.clientX < box.right &&
@@ -58,10 +45,13 @@ function SourceArea(props) {
         const newTargets = [...targets];
         newTargets.push({
           id: parseInt(e.timeStamp),
-          top: e.target.offsetTop + e.clientY - posY,
-          left: e.target.offsetLeft + e.clientX - posX,
+          top:
+            e.target.offsetTop +
+            (e.clientY - posY - 123 - parseInt(screen.top)) / ratio,
+          left:
+            e.target.offsetLeft +
+            (e.clientX - posX - 168 - parseInt(screen.left)) / ratio,
           details: STOCK_DATA[e.target.id],
-          // details: tempDetails,
         });
         return newTargets;
       });
@@ -71,16 +61,7 @@ function SourceArea(props) {
     e.target.style.top = `${originalY}px`;
   };
 
-  // const dragOverHandler = e => {
-  //   e.preventDefault();
-  // };
-
-  // const dropHandler = e => {
-  //   tempDetails = JSON.parse(e.dataTransfer.getData('data'));
-  // };
-
   return (
-    // <Container onDragOver={dragOverHandler} onDrop={dropHandler}>
     <Container>
       <Label draggable={false}>STOCKS 📈</Label>
       <StockContainer>
@@ -150,10 +131,11 @@ const STOCK_DATA = [
 const Container = styled.div`
   flex-shrink: 0;
   width: 300px;
-  height: 80vh;
+  height: 85vh;
   margin: 10px 0;
   border-radius: 10px;
   box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.15);
+  background-color: white;
   z-index: 10;
 `;
 

@@ -4,12 +4,13 @@ import { useRecoilState } from 'recoil';
 import { targetsState, boxState, ratioState, screenState } from '../../states';
 
 function TargetArea(props) {
-  const wholeContainer = useRef();
+  const frame = useRef();
   const stockContainer = useRef();
 
   const [targets, setTargets] = useRecoilState(targetsState);
   const [box, setBox] = useRecoilState(boxState);
   const [screen, setScreen] = useRecoilState(screenState);
+  const [ratio, setRatio] = useRecoilState(ratioState);
 
   const [best, setBest] = useState({
     price: undefined,
@@ -63,7 +64,7 @@ function TargetArea(props) {
   }, [targets]);
 
   useEffect(() => {
-    const box = wholeContainer.current.getBoundingClientRect();
+    const box = frame.current.getBoundingClientRect();
     setBox({
       top: box.top,
       left: box.left,
@@ -163,8 +164,6 @@ function TargetArea(props) {
     };
   });
 
-  const [ratio, setRatio] = useRecoilState(ratioState);
-
   const wheelHandler = e => {
     setRatio(ratio => (ratio >= 0.2 ? ratio + 0.001 * e.deltaY : 0.2));
   };
@@ -178,16 +177,14 @@ function TargetArea(props) {
   };
 
   const moveScreen = e => {
-    if (e.target !== stockContainer.current) return;
-
-    const limitX = e.target.offsetLeft + (e.clientX - posX) / ratio <= 0;
-    const limitY = e.target.offsetTop + (e.clientY - posY) / ratio <= 0;
+    const limitX = e.target.offsetLeft + (e.clientX - posX) <= 0;
+    const limitY = e.target.offsetTop + (e.clientY - posY) <= 0;
 
     e.target.style.left = limitX
-      ? `${e.target.offsetLeft + (e.clientX - posX) / ratio}px`
+      ? `${e.target.offsetLeft + (e.clientX - posX)}px`
       : '0px';
     e.target.style.top = limitY
-      ? `${e.target.offsetTop + (e.clientY - posY) / ratio}px`
+      ? `${e.target.offsetTop + (e.clientY - posY)}px`
       : '0px';
 
     posX = limitX ? e.clientX : 0;
@@ -195,14 +192,14 @@ function TargetArea(props) {
   };
 
   const moveScreenEnd = e => {
-    const limitX = e.target.offsetLeft + (e.clientX - posX) / ratio <= 0;
-    const limitY = e.target.offsetTop + (e.clientY - posY) / ratio <= 0;
+    const limitX = e.target.offsetLeft + (e.clientX - posX) <= 0;
+    const limitY = e.target.offsetTop + (e.clientY - posY) <= 0;
 
     e.target.style.left = limitX
-      ? `${e.target.offsetLeft + (e.clientX - posX) / ratio}px`
+      ? `${e.target.offsetLeft + (e.clientX - posX)}px`
       : '0px';
     e.target.style.top = limitY
-      ? `${e.target.offsetTop + (e.clientY - posY) / ratio}px`
+      ? `${e.target.offsetTop + (e.clientY - posY)}px`
       : '0px';
 
     setScreen({ top: e.target.style.top, left: e.target.style.left });
@@ -215,13 +212,13 @@ function TargetArea(props) {
   return (
     <Container>
       <Label draggable={false}>TABLE 📊</Label>
-      <WholeContainer ref={wholeContainer}>
+      <Frame ref={frame}>
         <StockContainer
           ref={stockContainer}
           onWheel={wheelHandler}
           ratio={ratio}
           onDragStart={moveScreenStart}
-          onDragCapture={moveScreen}
+          onDrag={moveScreen}
           onDragEnd={moveScreenEnd}
           draggable
         >
@@ -314,7 +311,7 @@ function TargetArea(props) {
             </Ratio>
           )}
         </Icon>
-      </WholeContainer>
+      </Frame>
     </Container>
   );
 }
@@ -336,7 +333,7 @@ const Label = styled.div`
   font-weight: bold;
 `;
 
-const WholeContainer = styled.div`
+const Frame = styled.div`
   position: relative;
   width: 95%;
   height: 87%;
